@@ -86,10 +86,11 @@
 
           if (valid) {
             const user = {
-              firstname: firstname.value.trim(),
-              lastname: lastname.value.trim(),
+              first_name: firstname.value.trim(),
+              last_name: lastname.value.trim(),
               email: email.value.trim(),
               password: password.value,
+              confirm_password: confirmpassword.value,
             };
 
             try {

@@ -10,13 +10,16 @@
   <body class="container">
     <div class="page-header">
       <h2>Inventory List</h2>
-      <button type="button" id="addItemBtn">Add Item</button>
+      <div class="inventory-list-btns">
+        <button type="button" id="summaryBtn">Summary</button>
+        <button type="button" id="addItemBtn">Add Item</button>
+      </div>
     </div>
     <table id="inventoryTable">
       <thead>
         <tr>
           <th>Name</th>
-          <th>No. of Units</th>
+          <th>Quantity</th>
           <th>Price</th>
           <th>Action</th>
         </tr>
@@ -35,7 +38,7 @@
       </div>
     </div>
 
-    <!-- Modal for Add/Remove Units -->
+    <!-- Modal for Add/Remove Quantity -->
     <div
       id="quantityModalBackdrop"
       class="modal-backdrop"
@@ -56,6 +59,11 @@
     </div>
 
     <script type="module">
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "../../auth/login.html";
+      }
+
       import { BASE_API_URL } from "../../../js/config.js";
 
       // Redirect to add item page on button click
@@ -63,19 +71,30 @@
         window.location.href = "./add.html";
       });
 
+      // Redirect to summary page
+      document.getElementById("summaryBtn").addEventListener("click", () => {
+        window.location.href = "./summary.html";
+      });
+
       // Mock data fallback
       let mockData = [
-        { id: 1, name: "Laptop", units: 10, value: 800 },
-        { id: 2, name: "Monitor", units: 5, value: 150 },
-        { id: 3, name: "Keyboard", units: 20, value: 25 },
+        { id: 1, name: "Laptop", quantity: 10, value: 800 },
+        { id: 2, name: "Monitor", quantity: 5, value: 150 },
+        { id: 3, name: "Keyboard", quantity: 20, value: 25 },
       ];
 
       async function fetchInventory() {
         try {
-          const response = await fetch(`${BASE_API_URL}/inventory`);
+          const response = await fetch(`${BASE_API_URL}/inventory`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "ngrok-skip-browser-warning": "true",
+            },
+          });
           if (!response.ok) throw new Error("API error");
           return await response.json();
         } catch (error) {
+          console.log("Error: ", error);
           return mockData;
         }
       }
@@ -87,8 +106,8 @@
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${item.name}</td>
-            <td>${item.units}</td>
-            <td>${item.value}</td>
+            <td>${item.quantity}</td>
+            <td>${item.price}</td>
             <td>
               <button class="action-btn add-btn" data-id="${item.id}">Add</button>
               <button class="action-btn remove-btn" data-id="${item.id}">Remove</button>
@@ -147,10 +166,17 @@
           try {
             const response = await fetch(
               `${BASE_API_URL}/inventory/${itemIdToDelete}`,
-              { method: "DELETE" }
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
             );
             if (!response.ok) throw new Error("API error");
           } catch (error) {
+            console.log("Error: ", error);
+
             mockData = mockData.filter((item) => item.id != itemIdToDelete);
           }
           hideDeleteModal();
@@ -163,7 +189,7 @@
           hideDeleteModal();
         });
 
-      // Modal logic for add/remove units
+      // Modal logic for add/remove quantity
       let itemIdForQuantity = null;
       let quantityAction = null;
 
@@ -196,21 +222,29 @@
           errorDiv.textContent = "";
           try {
             const response = await fetch(
-              `${BASE_API_URL}/inventory/add-remove-stock/${itemIdForQuantity}`,
+              `${BASE_API_URL}/inventory/add-remove-stock`,
               {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ quantity: qty, action: quantityAction }),
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  item_id: itemIdForQuantity,
+                  change_amount: qty,
+                  action: quantityAction,
+                }),
               }
             );
             if (!response.ok) throw new Error("API error");
           } catch (error) {
+            console.log("Error: ", error);
             // Update mockData for demo
             mockData = mockData.map((item) => {
               if (item.id == itemIdForQuantity) {
-                if (quantityAction === "ADD") item.units += qty;
+                if (quantityAction === "ADD") item.quantity += qty;
                 if (quantityAction === "REMOVE")
-                  item.units = Math.max(0, item.units - qty);
+                  item.quantity = Math.max(0, item.quantity - qty);
               }
               return item;
             });

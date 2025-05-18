@@ -34,6 +34,10 @@
     </form>
 
     <script type="module">
+      let token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "../../auth/login.html";
+      }
       import { BASE_API_URL } from "../../../js/config.js";
 
       const mockCategories = [
@@ -49,10 +53,18 @@
 
       async function fetchCategories() {
         try {
-          const response = await fetch(`${BASE_API_URL}/categories`);
+          const response = await fetch(`${BASE_API_URL}/categories`, {
+            headers: {
+              "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
+              Authorization: `Bearer ${token}`,
+            },
+          });
           if (!response.ok) throw new Error("API error");
-          return await response.json();
-        } catch (e) {
+          const jsonData = await response.json();
+          return jsonData.data;
+        } catch (error) {
+          console.log("Error: ", error);
           return mockCategories;
         }
       }
@@ -119,13 +131,16 @@
               description: description.value.trim(),
               quantity: Number(quantity.value),
               price: Number(price.value),
-              categoryId: category.value,
+              category: category.value,
             };
 
             try {
               const response = await fetch(`${BASE_API_URL}/inventory`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
                 body: JSON.stringify(item),
               });
 
@@ -137,6 +152,7 @@
                 alert(data.message || "Failed to add item.");
               }
             } catch (error) {
+              console.log("Error: ", error);
               alert("An error occurred. Please try again.");
             }
           }

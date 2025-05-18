@@ -60,15 +60,20 @@
               });
 
               if (response.ok) {
+                const data = await response.json();
+                console.log(data);
+                if (data.tokens) {
+                  localStorage.setItem("token", data.tokens.access);
+                }
                 alert("Login successful!");
-                // Redirect to dashboard or home page
-                // window.location.href = "dashboard.html";
+                window.location.href = "../app/inventory/list.html";
               } else {
                 const data = await response.json();
                 document.getElementById("passwordError").textContent =
                   data.message || "Invalid email or password";
               }
             } catch (error) {
+              console.log("Error: ", error);
               document.getElementById("passwordError").textContent =
                 "An error occurred. Please try again.";
             }
