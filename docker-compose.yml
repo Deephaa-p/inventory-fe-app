@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   frontend:
-    build: .
+    image: inventory_front_end
     ports:
       - "3001:80"
     container_name: inventory-fe-app
